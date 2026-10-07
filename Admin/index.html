@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Editorial CDS | Administration</title>
+
+<style>
+:root {
+    --bg: #050505;
+    --panel: #0e0e0e;
+    --panel2: #151515;
+    --gold: #d9b65d;
+    --gold-light: #f0d787;
+    --gold-soft: rgba(217,182,93,.12);
+    --text: #f4efe2;
+    --muted: #9d9789;
+    --border: rgba(217,182,93,.20);
+    --danger: #d96a6a;
+    --success: #75c88a;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 50% -20%, rgba(217,182,93,.09), transparent 35%),
+        var(--bg);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.login-screen {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.login-card {
+    width: min(430px, 100%);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 35px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+}
+
+.logo {
+    width: 55px;
+    height: 55px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--gold-light);
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+}
+
+.login-card h1 {
+    color: var(--gold-light);
+    margin-bottom: 7px;
+}
+
+.login-card p {
+    color: var(--muted);
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--gold-light);
+    font-size: .85rem;
+    margin-bottom: 7px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 13px;
+    background: #090909;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 9px;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--gold);
+}
+
+.gold-button {
+    width: 100%;
+    padding: 13px;
+    background: var(--gold);
+    color: #050505;
+    border: 0;
+    border-radius: 9px;
+    font-weight: bold;
+}
+
+.login-message {
+    min-height: 22px;
+    margin-top: 15px;
+    color: var(--danger);
+    font-size: .85rem;
+}
+
+.dashboard {
+    display: none;
+    min-height: 100vh;
+}
+
+.dashboard.active {
+    display: block;
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(5,5,5,.93);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid var(--border);
+    padding: 15px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand {
+    color: var(--gold-light);
+    letter-spacing: 2px;
+}
+
+.logout {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--gold-light);
+    padding: 8px 15px;
+    border-radius: 20px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    min-height: calc(100vh - 70px);
+}
+
+.sidebar {
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+}
+
+.side-button {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 12px;
+    border-radius: 9px;
+    margin-bottom: 5px;
+}
+
+.side-button:hover,
+.side-button.active {
+    color: var(--gold-light);
+    background: var(--gold-soft);
+    border-color: var(--border);
+}
+
+.content {
+    padding: 30px;
+    max-width: 1500px;
+    width: 100%;
+    margin: auto;
+}
+
+.dashboard-section {
+    display: none;
+}
+
+.dashboard-section.active {
+    display: block;
+    animation: fadeIn .35s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.heading {
+    margin-bottom: 25px;
+}
+
+.heading small {
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.heading h2 {
+    color: var(--gold-light);
+    font-size: 2.3rem;
+    margin-top: 5px;
+}
+
+.heading p {
+    color: var(--muted);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.stat small {
+    color: var(--muted);
+}
+
+.stat strong {
+    display: block;
+    font-size: 2rem;
+    color: var(--gold-light);
+    margin-top: 5px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 750px;
+}
+
+th,
+td {
+    padding: 13px;
+    border-bottom: 1px solid rgba(217,182,93,.10);
+    text-align: left;
+}
+
+th {
+    color: var(--gold-light);
+    font-size: .8rem;
+}
+
+td {
+    color: var(--muted);
+    font-size: .86rem;
+}
+
+.action-button {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--gold-light);
+    padding: 7px 10px;
+    border-radius: 7px;
+    margin: 2px;
+}
+
+.action-button.success {
+    color: var(--success);
+    border-color: rgba(117,200,138,.35);
+}
+
+.action-button.danger {
+    color: var(--danger);
+    border-color: rgba(217,106,106,.35);
+}
+
+.notice {
+    padding: 18px;
+    background: var(--gold-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+}
+
+.security-warning {
+    border-color: rgba(217,106,106,.35);
+}
+
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        overflow-x: auto;
+        gap: 5px;
+    }
+
+    .side-button {
+        min-width: max-content;
+        width: auto;
+        margin: 0;
+    }
+
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 550px) {
+    .content {
+        padding: 20px 14px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar {
+        padding: 13px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+
+<section class="login-screen" id="loginScreen">
+
+    <div class="login-card">
+
+        <div class="logo">E</div>
+
+        <h1>Editorial CDS</h1>
+
+        <p>Secure Administration Portal</p>
+
+        <form id="loginForm">
+
+            <div class="form-group">
+
+                <label for="adminCode">
+                    Admin Access Code
+                </label>
+
+                <input
+                    id="adminCode"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+            </div>
+
+            <button
+                type="submit"
+                class="gold-button"
+            >
+                Login
+            </button>
+
+        </form>
+
+        <div
+            class="login-message"
+            id="loginMessage"
+            aria-live="polite"
+        ></div>
+
+    </div>
+
+</section>
+
+
+<!-- DASHBOARD -->
+
+<section class="dashboard" id="dashboard">
+
+    <header class="topbar">
+
+        <div class="brand">
+            EDITORIAL CDS ADMINISTRATION
+        </div>
+
+        <button
+            class="logout"
+            id="logoutButton"
+        >
+            Logout
+        </button>
+
+    </header>
+
+
+    <div class="layout">
+
+        <aside class="sidebar">
+
+            <button class="side-button active" data-section="overview">
+                Dashboard
+            </button>
+
+            <button class="side-button" data-section="articles">
+                Article Submissions
+            </button>
+
+            <button class="side-button" data-section="advertisements">
+                Advertisements
+            </button>
+
+            <button class="side-button" data-section="suggestions">
+                Suggestions
+            </button>
+
+            <button class="side-button" data-section="social">
+                Social Posts
+            </button>
+
+            <button class="side-button" data-section="events">
+                Events
+            </button>
+
+            <button class="side-button" data-section="writers">
+                Writers
+            </button>
+
+            <button class="side-button" data-section="activity">
+                Activity Log
+            </button>
+
+            <button class="side-button" data-section="security">
+                Security
+            </button>
+
+        </aside>
+
+
+        <main class="content">
+
+
+            <!-- OVERVIEW -->
+
+            <section
+                class="dashboard-section active"
+                id="overview"
+            >
+
+                <div class="heading">
+                    <small>Administration</small>
+                    <h2>Dashboard</h2>
+                    <p>Editorial CDS content and management overview.</p>
+                </div>
+
+                <div class="notice security-warning">
+                    This GitHub-only version is a functional prototype.
+                    Real production authentication, database security and payment
+                    verification must be moved to a secure backend before handling
+                    sensitive or financial information.
+                </div>
+
+                <div class="stats">
+
+                    <div class="stat">
+                        <small>Pending Articles</small>
+                        <strong id="statArticles">0</strong>
+                    </div>
+
+                    <div class="stat">
+                        <small>Advertisements</small>
+                        <strong id="statAds">0</strong>
+                    </div>
+
+                    <div class="stat">
+                        <small>Suggestions</small>
+                        <strong id="statSuggestions">0</strong>
+                    </div>
+
+                    <div class="stat">
+                        <small>Activity Records</small>
+                        <strong id="statActivity">0</strong>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ARTICLES -->
+
+            <section
+                class="dashboard-section"
+                id="articles"
+            >
+
+                <div class="heading">
+                    <small>Editorial Desk</small>
+                    <h2>Article Submissions</h2>
+                    <p>Review submitted articles before publication.</p>
+                </div>
+
+                <div
+                    class="table-wrap"
+                    id="articlesTable"
+                ></div>
+
+            </section>
+
+
+            <!-- ADVERTISEMENTS -->
+
+            <section
+                class="dashboard-section"
+                id="advertisements"
+            >
+
+                <div class="heading">
+                    <small>Revenue</small>
+                    <h2>Advertisements</h2>
+                    <p>
+                        Every advertisement costs ₦500 per day.
+                        Payment verification and publication approval are separate.
+                    </p>
+                </div>
+
+                <div class="notice">
+                    Advertising workflow:
+                    submitted → payment verification → admin review →
+                    approved → published → automatic expiry.
+                </div>
+
+                <div
+                    class="table-wrap"
+                    id="adsTable"
+                ></div>
+
+            </section>
+
+
+            <!-- SUGGESTIONS -->
+
+            <section
+                class="dashboard-section"
+                id="suggestions"
+            >
+
+                <div class="heading">
+                    <small>Community Voice</small>
+                    <h2>Suggestions</h2>
+                    <p>Suggestions and feedback received from visitors.</p>
+                </div>
+
+                <div
+                    class="table-wrap"
+                    id="suggestionsTable"
+                ></div>
+
+            </section>
+
+
+            <!-- SOCIAL -->
+
+            <section
+                class="dashboard-section"
+                id="social"
+            >
+
+                <div class="heading">
+                    <small>Social Media</small>
+                    <h2>Add Social Post</h2>
+                    <p>
+                        Add an approved social-media post by entering its original URL.
+                    </p>
+                </div>
+
+                <div class="notice">
+                    The production version should use platform-approved embed methods
+                    or APIs. If direct embedding is unavailable, visitors should be
+                    directed to the original post.
+                </div>
+
+                <div class="login-card">
+
+                    <form id="socialForm">
+
+                        <div class="form-group">
+                            <label>Platform</label>
+
+                            <select id="socialPlatform">
+                                <option>Facebook</option>
+                                <option>Instagram</option>
+                                <option>X</option>
+                                <option>YouTube</option>
+                                <option>TikTok</option>
+                                <option>LinkedIn</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Post URL</label>
+                            <input
+                                id="socialURL"
+                                type="url"
+                                required
+                                placeholder="https://..."
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input
+                                id="socialTitle"
+                                required
+                            >
+                        </div>
+
+                        <button class="gold-button">
+                            Save Social Post
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+
+            <!-- EVENTS -->
+
+            <section
+                class="dashboard-section"
+                id="events"
+            >
+
+                <div class="heading">
+                    <small>Community</small>
+                    <h2>Events</h2>
+                    <p>Create and manage Editorial CDS activities.</p>
+                </div>
+
+                <div class="notice">
+                    The production database will allow approved events to appear
+                    automatically in the public Events section.
+                </div>
+
+            </section>
+
+
+            <!-- WRITERS -->
+
+            <section
+                class="dashboard-section"
+                id="writers"
+            >
+
+                <div class="heading">
+                    <small>Contributors</small>
+                    <h2>Writers</h2>
+                    <p>Manage approved contributors and their published work.</p>
+                </div>
+
+                <div class="notice">
+                    Writer profiles will be connected to the secure database in the
+                    production version.
+                </div>
+
+            </section>
+
+
+            <!-- ACTIVITY -->
+
+            <section
+                class="dashboard-section"
+                id="activity"
+            >
+
+                <div class="heading">
+                    <small>Security</small>
+                    <h2>Admin Activity Log</h2>
+                    <p>Important administrative actions are recorded here.</p>
+                </div>
+
+                <div
+                    class="table-wrap"
+                    id="activityTable"
+                ></div>
+
+            </section>
+
+
+            <!-- SECURITY -->
+
+            <section
+                class="dashboard-section"
+                id="security"
+            >
+
+                <div class="heading">
+                    <small>Administration</small>
+                    <h2>Security</h2>
+                    <p>Security controls for the administration system.</p>
+                </div>
+
+                <div class="notice">
+                    Current prototype security controls include session expiration,
+                    failed-login lockout, logout and role-ready permissions.
+                    Password changes and multiple administrator accounts require the
+                    secure backend implementation.
+                </div>
+
+                <div class="login-card">
+
+                    <h2 style="color:var(--gold-light); margin-bottom:10px;">
+                        Session Security
+                    </h2>
+
+                    <p style="color:var(--muted); margin-bottom:15px;">
+                        The prototype session automatically expires after a period
+                        of inactivity.
+                    </p>
+
+                    <p style="color:var(--gold-light);">
+                        Current session:
+                        <strong id="sessionStatus">Active</strong>
+                    </p>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</section>
+
+
+<script>
+"use strict";
+
+/*
+    EDITORIAL CDS ADMIN PROTOTYPE
+
+    SECURITY NOTE
+
+    This code runs in the browser because the first version is being
+    hosted through GitHub Pages.
+
+    Browser-only authentication cannot be considered production-grade
+    authentication because the client code is delivered to the visitor.
+
+    The password is not stored as plain text in this file.
+    It is checked against a SHA-256 digest.
+
+    For production:
+    Authentication must move to a server-side system.
+    The database must enforce permissions server-side.
+    Payment confirmation must come from a trusted payment webhook.
+*/
+
+
+/* -------------------------------------------------------
+   INITIAL ADMIN CREDENTIAL
+   -------------------------------------------------------
+
+   Initial password requested for this project:
+
+   Saviour743
+
+   SHA-256 digest:
+   1a87305dd9a32f052ff102c2039cfeb92dd3ff181c27a5f1557543f35fcefaf7
+
+   This is NOT a substitute for server-side authentication.
+------------------------------------------------------- */
+
+const INITIAL_PASSWORD_HASH =
+"1a87305dd9a32f052ff102c2039cfeb92dd3ff181c27a5f1557543f35fcefaf7";
+
+
+/* SESSION SETTINGS */
+
+const SESSION_TIMEOUT =
+    15 * 60 * 1000;
+
+const MAX_FAILED_ATTEMPTS = 5;
+
+const LOCKOUT_TIME =
+    5 * 60 * 1000;
+
+
+/* DOM */
+
+const loginScreen =
+    document.getElementById("loginScreen");
+
+const dashboard =
+    document.getElementById("dashboard");
+
+const loginForm =
+    document.getElementById("loginForm");
+
+const adminCode =
+    document.getElementById("adminCode");
+
+const loginMessage =
+    document.getElementById("loginMessage");
+
+
+/* SHA-256 */
+
+async function sha256(value) {
+
+    const data =
+        new TextEncoder().encode(value);
+
+    const hash =
+        await crypto.subtle.digest(
+            "SHA-256",
+            data
+        );
+
+    return Array
+        .from(new Uint8Array(hash))
+        .map(byte =>
+            byte.toString(16).padStart(2, "0")
+        )
+        .join("");
+}
+
+
+/* LOCAL ADMIN SECURITY STATE */
+
+function getSecurityState() {
+
+    return JSON.parse(
+        localStorage.getItem(
+            "editorialAdminSecurity"
+        ) || JSON.stringify({
+            failedAttempts: 0,
+            lockedUntil: 0
+        })
+    );
+}
+
+function saveSecurityState(state) {
+
+    localStorage.setItem(
+        "editorialAdminSecurity",
+        JSON.stringify(state)
+    );
+}
+
+
+/* ACTIVITY LOG */
+
+function getActivity() {
+
+    return JSON.parse(
+        localStorage.getItem(
+            "editorialAdminActivity"
+        ) || "[]"
+    );
+}
+
+function addActivity(action) {
+
+    const activity =
+        getActivity();
+
+    activity.unshift({
+        id: crypto
