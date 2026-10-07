@@ -911,4 +911,980 @@ function addActivity(action) {
         getActivity();
 
     activity.unshift({
-        id: crypto
+        id: crypto.randomUUID(),
+        action,
+        timestamp: new Date().toISOString(),
+        administrator: "Super Admin"
+    });
+
+    localStorage.setItem(
+        "editorialAdminActivity",
+        JSON.stringify(activity.slice(0, 500))
+    );
+}
+
+
+/* SESSION */
+
+function createSession() {
+
+    const session = {
+        authenticated: true,
+        createdAt: Date.now(),
+        lastActivity: Date.now()
+    };
+
+    sessionStorage.setItem(
+        "editorialAdminSession",
+        JSON.stringify(session)
+    );
+}
+
+function getSession() {
+
+    return JSON.parse(
+        sessionStorage.getItem(
+            "editorialAdminSession"
+        ) || "null"
+    );
+}
+
+function destroySession() {
+
+    sessionStorage.removeItem(
+        "editorialAdminSession"
+    );
+}
+
+function isSessionValid() {
+
+    const session =
+        getSession();
+
+    if (!session || !session.authenticated) {
+        return false;
+    }
+
+    const inactive =
+        Date.now() - session.lastActivity;
+
+    if (inactive > SESSION_TIMEOUT) {
+        destroySession();
+        return false;
+    }
+
+    session.lastActivity =
+        Date.now();
+
+    sessionStorage.setItem(
+        "editorialAdminSession",
+        JSON.stringify(session)
+    );
+
+    return true;
+}
+
+
+/* LOGIN */
+
+loginForm.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+        const state =
+            getSecurityState();
+
+        if (
+            state.lockedUntil &&
+            Date.now() < state.lockedUntil
+        ) {
+
+            const remaining =
+                Math.ceil(
+                    (state.lockedUntil - Date.now()) /
+                    1000
+                );
+
+            loginMessage.textContent =
+                "Too many failed attempts. Try again in " +
+                remaining +
+                " seconds.";
+
+            return;
+        }
+
+
+        const entered =
+            adminCode.value;
+
+        if (!entered) {
+            return;
+        }
+
+
+        const enteredHash =
+            await sha256(entered);
+
+
+        if (
+            enteredHash ===
+            INITIAL_PASSWORD_HASH
+        ) {
+
+            state.failedAttempts = 0;
+            state.lockedUntil = 0;
+
+            saveSecurityState(state);
+
+            createSession();
+
+            addActivity(
+                "Administrator logged into dashboard"
+            );
+
+            showDashboard();
+
+            adminCode.value = "";
+
+        } else {
+
+            state.failedAttempts++;
+
+            if (
+                state.failedAttempts >=
+                MAX_FAILED_ATTEMPTS
+            ) {
+
+                state.lockedUntil =
+                    Date.now() +
+                    LOCKOUT_TIME;
+
+                state.failedAttempts = 0;
+
+                loginMessage.textContent =
+                    "Too many failed attempts. Login temporarily locked.";
+
+            } else {
+
+                const remaining =
+                    MAX_FAILED_ATTEMPTS -
+                    state.failedAttempts;
+
+                loginMessage.textContent =
+                    "Incorrect access code. " +
+                    remaining +
+                    " attempts remaining.";
+            }
+
+            saveSecurityState(state);
+
+            addActivity(
+                "Failed administrator login attempt"
+            );
+        }
+
+    }
+);
+
+
+/* SHOW DASHBOARD */
+
+function showDashboard() {
+
+    loginScreen.style.display =
+        "none";
+
+    dashboard.classList.add(
+        "active"
+    );
+
+    loginMessage.textContent = "";
+
+    refreshDashboard();
+
+}
+
+
+/* LOGOUT */
+
+document
+    .getElementById("logoutButton")
+    .addEventListener(
+        "click",
+        () => {
+
+            addActivity(
+                "Administrator logged out"
+            );
+
+            destroySession();
+
+            dashboard.classList.remove(
+                "active"
+            );
+
+            loginScreen.style.display =
+                "grid";
+
+            adminCode.value = "";
+
+            loginMessage.textContent =
+                "You have been logged out.";
+
+        }
+    );
+
+
+/* AUTO SESSION CHECK */
+
+setInterval(
+    () => {
+
+        if (
+            dashboard.classList.contains(
+                "active"
+            )
+        ) {
+
+            if (!isSessionValid()) {
+
+                destroySession();
+
+                dashboard.classList.remove(
+                    "active"
+                );
+
+                loginScreen.style.display =
+                    "grid";
+
+                loginMessage.textContent =
+                    "Your session expired. Please log in again.";
+            }
+        }
+
+    },
+    30000
+);
+
+
+/* ACTIVITY ON USER INTERACTION */
+
+[
+    "click",
+    "keydown",
+    "mousemove",
+    "touchstart"
+].forEach(eventName => {
+
+    document.addEventListener(
+        eventName,
+        () => {
+
+            if (
+                dashboard.classList.contains(
+                    "active"
+                )
+            ) {
+                isSessionValid();
+            }
+
+        },
+        {
+            passive: true
+        }
+    );
+
+});
+
+
+/* SIDEBAR */
+
+document
+    .querySelectorAll(".side-button")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".side-button"
+                    )
+                    .forEach(item =>
+                        item.classList.remove(
+                            "active"
+                        )
+                    );
+
+                document
+                    .querySelectorAll(
+                        ".dashboard-section"
+                    )
+                    .forEach(section =>
+                        section.classList.remove(
+                            "active"
+                        )
+                    );
+
+                button.classList.add(
+                    "active"
+                );
+
+                document
+                    .getElementById(
+                        button.dataset.section
+                    )
+                    .classList.add(
+                        "active"
+                    );
+
+                refreshDashboard();
+
+            }
+        );
+
+    });
+
+
+/* DATA HELPERS */
+
+function getRecords(key) {
+
+    return JSON.parse(
+        localStorage.getItem(key) ||
+        "[]"
+    );
+}
+
+
+/* DASHBOARD COUNTS */
+
+function refreshDashboard() {
+
+    const articles =
+        getRecords(
+            "editorialPendingArticles"
+        );
+
+    const ads =
+        getRecords(
+            "editorialAdvertisements"
+        );
+
+    const suggestions =
+        getRecords(
+            "editorialSuggestions"
+        );
+
+    const activity =
+        getActivity();
+
+    document.getElementById(
+        "statArticles"
+    ).textContent =
+        articles.filter(
+            item => item.status === "pending"
+        ).length;
+
+    document.getElementById(
+        "statAds"
+    ).textContent =
+        ads.length;
+
+    document.getElementById(
+        "statSuggestions"
+    ).textContent =
+        suggestions.filter(
+            item => item.status === "unread"
+        ).length;
+
+    document.getElementById(
+        "statActivity"
+    ).textContent =
+        activity.length;
+
+    renderArticles();
+    renderAds();
+    renderSuggestions();
+    renderActivity();
+
+}
+
+
+/* ARTICLES */
+
+function renderArticles() {
+
+    const records =
+        getRecords(
+            "editorialPendingArticles"
+        );
+
+    const container =
+        document.getElementById(
+            "articlesTable"
+        );
+
+    if (!records.length) {
+
+        container.innerHTML =
+            "<div style='padding:25px;color:#9d9789;'>No article submissions yet.</div>";
+
+        return;
+    }
+
+    container.innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Writer</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${records.map(item => `
+                    <tr>
+                        <td>${escapeHTML(item.name)}</td>
+                        <td>${escapeHTML(item.title)}</td>
+                        <td>${escapeHTML(item.category)}</td>
+                        <td>${escapeHTML(item.status)}</td>
+                        <td>
+                            ${
+                                item.status === "pending"
+                                ? `
+                                <button
+                                    class="action-button success"
+                                    onclick="approveArticle('${item.id}')"
+                                >
+                                    Approve
+                                </button>
+
+                                <button
+                                    class="action-button danger"
+                                    onclick="rejectArticle('${item.id}')"
+                                >
+                                    Reject
+                                </button>
+                                `
+                                : "Processed"
+                            }
+                        </td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
+    `;
+}
+
+
+function approveArticle(id) {
+
+    updateRecord(
+        "editorialPendingArticles",
+        id,
+        {
+            status: "approved"
+        }
+    );
+
+    addActivity(
+        "Approved an article submission: " + id
+    );
+
+    refreshDashboard();
+}
+
+
+function rejectArticle(id) {
+
+    updateRecord(
+        "editorialPendingArticles",
+        id,
+        {
+            status: "rejected"
+        }
+    );
+
+    addActivity(
+        "Rejected an article submission: " + id
+    );
+
+    refreshDashboard();
+}
+
+
+/* ADVERTISEMENTS */
+
+function renderAds() {
+
+    const records =
+        getRecords(
+            "editorialAdvertisements"
+        );
+
+    const container =
+        document.getElementById(
+            "adsTable"
+        );
+
+    if (!records.length) {
+
+        container.innerHTML =
+            "<div style='padding:25px;color:#9d9789;'>No advertisements submitted yet.</div>";
+
+        return;
+    }
+
+    container.innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Advertiser</th>
+                    <th>Title</th>
+                    <th>Days</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Approval</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                ${records.map(item => `
+                    <tr>
+
+                        <td>${escapeHTML(item.advertiser)}</td>
+
+                        <td>${escapeHTML(item.title)}</td>
+
+                        <td>${item.days}</td>
+
+                        <td>₦${Number(item.totalAmount).toLocaleString("en-NG")}</td>
+
+                        <td>${escapeHTML(item.paymentStatus)}</td>
+
+                        <td>${escapeHTML(item.approvalStatus)}</td>
+
+                        <td>
+
+                            ${
+                                item.paymentStatus !== "verified"
+                                ? `
+                                <button
+                                    class="action-button success"
+                                    onclick="verifyPayment('${item.id}')"
+                                >
+                                    Verify Payment
+                                </button>
+                                `
+                                : ""
+                            }
+
+                            ${
+                                item.paymentStatus === "verified" &&
+                                item.approvalStatus !== "approved"
+                                ? `
+                                <button
+                                    class="action-button success"
+                                    onclick="approveAd('${item.id}')"
+                                >
+                                    Approve Ad
+                                </button>
+                                `
+                                : ""
+                            }
+
+                            ${
+                                item.approvalStatus !== "rejected"
+                                ? `
+                                <button
+                                    class="action-button danger"
+                                    onclick="rejectAd('${item.id}')"
+                                >
+                                    Reject
+                                </button>
+                                `
+                                : ""
+                            }
+
+                        </td>
+
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
+    `;
+}
+
+
+function verifyPayment(id) {
+
+    /*
+        DEMONSTRATION ONLY.
+
+        This button represents manual confirmation.
+
+        In production this action must verify against a trusted
+        payment provider transaction/webhook.
+    */
+
+    updateRecord(
+        "editorialAdvertisements",
+        id,
+        {
+            paymentStatus: "verified"
+        }
+    );
+
+    addActivity(
+        "Manually verified advertisement payment: " + id
+    );
+
+    refreshDashboard();
+}
+
+
+function approveAd(id) {
+
+    const records =
+        getRecords(
+            "editorialAdvertisements"
+        );
+
+    const item =
+        records.find(
+            record => record.id === id
+        );
+
+    if (!item) {
+        return;
+    }
+
+    if (
+        item.paymentStatus !==
+        "verified"
+    ) {
+
+        alert(
+            "Payment must be verified before publication."
+        );
+
+        return;
+    }
+
+    const now =
+        new Date();
+
+    const end =
+        new Date(
+            now.getTime() +
+            item.days *
+            24 *
+            60 *
+            60 *
+            1000
+        );
+
+    updateRecord(
+        "editorialAdvertisements",
+        id,
+        {
+            approvalStatus: "approved",
+            publishedAt: now.toISOString(),
+            expiresAt: end.toISOString()
+        }
+    );
+
+    addActivity(
+        "Approved advertisement for publication: " + id
+    );
+
+    refreshDashboard();
+}
+
+
+function rejectAd(id) {
+
+    updateRecord(
+        "editorialAdvertisements",
+        id,
+        {
+            approvalStatus: "rejected"
+        }
+    );
+
+    addActivity(
+        "Rejected advertisement: " + id
+    );
+
+    refreshDashboard();
+}
+
+
+/* SUGGESTIONS */
+
+function renderSuggestions() {
+
+    const records =
+        getRecords(
+            "editorialSuggestions"
+        );
+
+    const container =
+        document.getElementById(
+            "suggestionsTable"
+        );
+
+    if (!records.length) {
+
+        container.innerHTML =
+            "<div style='padding:25px;color:#9d9789;'>No suggestions yet.</div>";
+
+        return;
+    }
+
+    container.innerHTML = `
+        <table>
+
+            <thead>
+                <tr>
+                    <th>From</th>
+                    <th>Category</th>
+                    <th>Suggestion</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                ${records.map(item => `
+
+                    <tr>
+
+                        <td>
+                            ${escapeHTML(item.name || "Anonymous")}
+                        </td>
+
+                        <td>
+                            ${escapeHTML(item.category)}
+                        </td>
+
+                        <td>
+                            ${escapeHTML(item.suggestion)}
+                        </td>
+
+                        <td>
+                            ${escapeHTML(item.status)}
+                        </td>
+
+                        <td>
+
+                            ${
+                                item.status === "unread"
+                                ? `
+                                <button
+                                    class="action-button success"
+                                    onclick="markSuggestionRead('${item.id}')"
+                                >
+                                    Mark Read
+                                </button>
+                                `
+                                : ""
+                            }
+
+                            <button
+                                class="action-button danger"
+                                onclick="deleteSuggestion('${item.id}')"
+                            >
+                                Delete
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                `).join("")}
+
+            </tbody>
+
+        </table>
+    `;
+}
+
+
+function markSuggestionRead(id) {
+
+    updateRecord(
+        "editorialSuggestions",
+        id,
+        {
+            status: "read"
+        }
+    );
+
+    addActivity(
+        "Marked suggestion as read: " + id
+    );
+
+    refreshDashboard();
+}
+
+
+function deleteSuggestion(id) {
+
+    const records =
+        getRecords(
+            "editorialSuggestions"
+        );
+
+    const filtered =
+        records.filter(
+            item => item.id !== id
+        );
+
+    localStorage.setItem(
+        "editorialSuggestions",
+        JSON.stringify(filtered)
+    );
+
+    addActivity(
+        "Deleted suggestion: " + id
+    );
+
+    refreshDashboard();
+}
+
+
+/* SOCIAL POSTS */
+
+document
+    .getElementById("socialForm")
+    .addEventListener(
+        "submit",
+        event => {
+
+            event.preventDefault();
+
+            const record = {
+
+                id: crypto.randomUUID(),
+
+                platform:
+                    document.getElementById(
+                        "socialPlatform"
+                    ).value,
+
+                url:
+                    document.getElementById(
+                        "socialURL"
+                    ).value.trim(),
+
+                title:
+                    document.getElementById(
+                        "socialTitle"
+                    ).value.trim(),
+
+                status:
+                    "approved",
+
+                createdAt:
+                    new Date().toISOString()
+
+            };
+
+            const posts =
+                getRecords(
+                    "editorialSocialPosts"
+                );
+
+            posts.push(record);
+
+            localStorage.setItem(
+                "editorialSocialPosts",
+                JSON.stringify(posts)
+            );
+
+            addActivity(
+                "Added social-media post: " +
+                record.title
+            );
+
+            event.target.reset();
+
+            alert(
+                "Social post saved."
+            );
+
+        }
+    );
+
+
+/* GENERIC UPDATE */
+
+function updateRecord(
+    key,
+    id,
+    changes
+) {
+
+    const records =
+        getRecords(key);
+
+    const index =
+        records.findIndex(
+            item => item.id === id
+        );
+
+    if (index === -1) {
+        return;
+    }
+
+    records[index] = {
+        ...records[index],
+        ...changes
+    };
+
+    localStorage.setItem(
+        key,
+        JSON.stringify(records)
+    );
+}
+
+
+/* SAFE HTML OUTPUT */
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+/* START */
+
+if (isSessionValid()) {
+
+    showDashboard();
+
+} else {
+
+    loginScreen.style.display =
+        "grid";
+
+}
+
+</script>
+
+</body>
+</html>
